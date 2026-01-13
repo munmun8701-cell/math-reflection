@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>算数ふりかえり</title>
+  <style>
+    :root{
+      --bg:#f6f7fb; --card:#ffffff; --text:#111827; --muted:#6b7280;
+      --line:#d9dce5; --primary:#2f6fed; --primaryText:#ffffff;
+      --warnBg:#fff7ed; --warnText:#9a3412; --ok:#0a6b2d; --ng:#b42318;
+    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;background:var(--bg);margin:0;color:var(--text)}
+    .wrap{max-width:720px;margin:0 auto;padding:16px}
+    .top{background:linear-gradient(180deg,#eef2ff,transparent);border-radius:18px;padding:14px 14px 10px}
+    h1{font-size:18px;margin:0 0 6px}
+    .sub{font-size:12px;color:var(--muted);line-height:1.6}
+    .card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin:12px 0}
+    label{display:block;font-size:13px;margin:10px 0 6px}
+    input,select,textarea{
+      width:100%; padding:12px; border:1px solid var(--line); border-radius:12px; font-size:15px;
+      box-sizing:border-box; background:#fff;
+    }
+    textarea{min-height:92px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;cursor:pointer}
+    .primary{background:var(--primary);color:var(--primaryText)}
+    .ghost{background:#eef2ff;color:#243b85}
+    .danger{background:#ffecec;color:#8a1f1f}
+    .hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+    .status{margin-top:10px;font-size:13px;line-height:1.6}
+    .ok{color:var(--ok);font-weight:700}
+    .ng{color:var(--ng);font-weight:700}
+    .warn{background:var(--warnBg);color:var(--warnText);border-radius:12px;padding:10px;font-size:12px;line-height:1.6}
+    .pill{display:inline-block;background:#eef2ff;border:1px solid #dbe4ff;border-radius:999px;padding:4px 10px;font-size:12px;color:#243b85}
+    .small{font-size:12px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>算数のふりかえり</h1>
+      <div class="sub">
+        1分でOK。<span class="pill" id="todayPill"></span><br>
+        送信できないときは「一時保存」して、通信がよい場所で送ってください。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="warn">
+        送信がうまくいかない場合があります（学校の設定でフォームがログイン必須の場合など）。そのときは先生に伝えてください。
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>学年</label>
+          <select id="grade">
+            <option value="">選んでね</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          </select>
+        </div>
+        <div>
+          <label>組</label>
+          <input id="clazz" placeholder="例：1 / A" />
+        </div>
+        <div>
+          <label>番号</label>
+          <input id="no" inputmode="numeric" placeholder="例：12" />
+        </div>
+      </div>
+
+      <label>今日の理解度</label>
+      <select id="level">
+        <option value="">選んでね</option>
+        <option value="よく分かった">よく分かった</option>
+        <option value="だいたい分かった">だいたい分かった</option>
+        <option value="むずかしかった">むずかしかった</option>
+      </select>
+
+      <label>今日わかったこと（短くでOK）</label>
+      <textarea id="learned" placeholder="例：分母をそろえると計算しやすい"></textarea>
+
+      <label>むずかしかったところ（短くでOK）</label>
+      <textarea id="hard" placeholder="例：文章題から式を作るところ"></textarea>
+
+      <label>先生に伝えたいこと（あれば）</label>
+      <textarea id="msg" placeholder="例：もう少し練習問題がほしい"></textarea>
+
+      <div class="btns">
+        <button class="primary" id="send">送信</button>
+        <button class="ghost" id="save">一時保存</button>
+        <button class="danger" id="reset">リセット</button>
+      </div>
+
+      <div class="status" id="status"></div>
+      <div class="hint">
+        「一時保存」はこの端末に保存されます（先生には送られません）。<br>
+        送信後は自動で消えます。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="small">
+        先生向け：このページはGitHub Pagesで配布できます。URLをQRにして配付してください。
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ===============================
+  // TODO 1) Googleフォームの送信先URLに差し替え
+  // フォームURLが
+  //   https://docs.google.com/forms/d/e/FORM_ID/viewform
+  // なら、送信先は
+  //   https://docs.google.com/forms/d/e/FORM_ID/formResponse
+  // ===============================
+  const FORM_ACTION_URL = "https://docs.google.com/forms/d/e/XXXXXXXXXXXXXXX/formResponse";
+
+  // ===============================
+  // TODO 2) entry番号を自分のフォームに合わせて差し替え
+  // 「事前入力リンク」に出てくる entry.************ を貼る
+  // ===============================
+  const ENTRY = {
+    date:    "entry.1111111111",
+    grade:   "entry.2222222222",
+    clazz:   "entry.3333333333",
+    no:      "entry.4444444444",
+    level:   "entry.5555555555",
+    learned: "entry.6666666666",
+    hard:    "entry.7777777777",
+    msg:     "entry.8888888888"
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const status = (html) => { $("status").innerHTML = html; };
+
+  // 日付
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth()+1).padStart(2,"0");
+  const dd = String(now.getDate()).padStart(2,"0");
+  const dateStr = `${yyyy}-${mm}-${dd}`;
+  $("todayPill").textContent = `今日：${yyyy}年${Number(mm)}月${Number(dd)}日`;
+
+  // 一時保存
+  const KEY = "math_reflection_draft_v1";
+  const getDraft = () => { try { return JSON.parse(localStorage.getItem(KEY) || "null"); } catch { return null; } };
+  const setDraft = (v) => localStorage.setItem(KEY, JSON.stringify(v));
+  const clearDraft = () => localStorage.removeItem(KEY);
+
+  const readForm = () => ({
+    date: dateStr,
+    grade: $("grade").value.trim(),
+    clazz: $("clazz").value.trim(),
+    no: $("no").value.trim(),
+    level: $("level").value.trim(),
+    learned: $("learned").value.trim(),
+    hard: $("hard").value.trim(),
+    msg: $("msg").value.trim()
+  });
+
+  const writeForm = (v) => {
+    $("grade").value = v.grade || "";
+    $("clazz").value = v.clazz || "";
+    $("no").value = v.no || "";
+    $("level").value = v.level || "";
+    $("learned").value = v.learned || "";
+    $("hard").value = v.hard || "";
+    $("msg").value = v.msg || "";
+  };
+
+  // 復元
+  const d = getDraft();
+  if (d) {
+    writeForm(d);
+    status('<span class="ok">前回の一時保存を復元しました。</span>');
+  }
+
+  $("save").onclick = () => {
+    setDraft(readForm());
+    status('<span class="ok">一時保存しました。</span>');
+  };
+
+  $("reset").onclick = () => {
+    if (!confirm("入力を消しますか？")) return;
+    writeForm({});
+    clearDraft();
+    status('<span class="ok">リセットしました。</span>');
+  };
+
+  // 送信
+  $("send").onclick = async () => {
+    const v = readForm();
+
+    // 必須チェック
+    if (!v.grade || !v.clazz || !v.no || !v.level) {
+      status('<span class="ng">学年・組・番号・理解度は必ず入れてください。</span>');
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append(ENTRY.date, v.date);
+    fd.append(ENTRY.grade, v.grade);
+    fd.append(ENTRY.clazz, v.clazz);
+    fd.append(ENTRY.no, v.no);
+    fd.append(ENTRY.level, v.level);
+    fd.append(ENTRY.learned, v.learned);
+    fd.append(ENTRY.hard, v.hard);
+    fd.append(ENTRY.msg, v.msg);
+
+    try {
+      // Googleフォームへの送信はCORS上、成功判定が取りにくいので no-cors を使用
+      await fetch(FORM_ACTION_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: fd,
+        keepalive: true
+      });
+
+      // 送信できた前提でUIをクリア（失敗の可能性もあるため、現場ではシートで到達確認を推奨）
+      clearDraft();
+      writeForm({});
+      status('<span class="ok">送信しました。ありがとうございました。</span><div class="small">※もし送信できていない場合は先生が連絡します。</div>');
+    } catch (e) {
+      // 通信失敗時は下書き保存
+      setDraft(v);
+      status('<span class="ng">送信に失敗した可能性があります。通信を確認して、もう一度「送信」してください（下書きは保存しました）。</span>');
+    }
+  };
+</script>
+</body>
+</html>
